@@ -96,7 +96,7 @@ class enclosure:Imap
         return lifetime/float(i)
     
     def sellLeastExpensive()
-        var minC:float = 1f
+        var minC:float = 10000f
         var id = 0
         if (length(criters)==maxCriters)
             var i: int = 0
@@ -106,6 +106,7 @@ class enclosure:Imap
                         id = i
                         minC = criters[i] -> getCost()
                 i=i+1
+            foodCost = foodCost - int(minC*100f)
             erase(criters,id)
             
     def sellMostExpensive()
@@ -120,6 +121,7 @@ class enclosure:Imap
                         minC = criters[i] -> getCost()
                 i=i+1
             erase(criters,id)  
+            foodCost = foodCost - int(minC*100f)
 
     def sellOldest()
         var minC:int = -1
@@ -132,6 +134,7 @@ class enclosure:Imap
                         id = i
                         minC = criters[i].lifetime
                 i=i+1
+            foodCost = foodCost - int(criters[id]->getCost()*100f)
             erase(criters,id)
 
     def sell(var strategy:int)
@@ -141,6 +144,31 @@ class enclosure:Imap
             sellMostExpensive()
         if (strategy==2)
             sellLeastExpensive()
+
+    def getCritAt(var x,y:int)
+        var i=0
+        while (i<length(criters))
+            if (criters[i].x_loc==x)&&(criters[i].y_loc==y)
+                return criters[i]
+            i++
+        return null
+    
+    def checkCrit(var spec:critr?)
+        var i=0
+        while (i<length(criters))
+            if (criters[i]==spec)
+                return true
+            i++
+        return false
+
+    def removeCrit(var spec:critr?)
+        var i=0
+        while (i<length(criters))
+            if (criters[i]==spec)
+                erase(criters,i)
+                return 
+            i++
+        return 
 
     def override getFood(var x,y:int)
         var x1 = (y+50)%50

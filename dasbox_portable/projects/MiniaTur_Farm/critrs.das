@@ -4,6 +4,7 @@ require fio
 
 var seed_crit:int4
 var save_file = fopen("savefile.txt","w")
+var e_arr: array<int>
 
 class Imap
 
@@ -41,6 +42,8 @@ class critr
     y_loc: int = 0
     color:uint = 0xFFFF0000
     name: string = ""
+    phenotype_body:array<int>
+    phenotype_body_color: uint = 0xFFFF0000
 
     def critr() 
         var i:int=0
@@ -63,9 +66,16 @@ class critr
             name = name + string(random_int(seed_crit)%10)
             i++
             
+        i = 0
+        while(i<8)
+            push(phenotype_body, random_int(seed_crit)%36)
+            i++
+            
+        phenotype_body_color = uint(random_int(seed_crit)%255+(random_int(seed_crit)%255)*256+(random_int(seed_crit)%255)*256*256+255*16777216)
+        color = phenotype_body_color
         direction = random_int(seed_crit)%4
     
-    def consumeGenome(var newGenome: array<Action?>&; var logic:bool=false; var mem:bool=false; var mut_incr:bool = false)
+    def consumeGenome(var newGenome: array<Action?>&; pb:array<int>; pbc:uint; var logic:bool=false; var mem:bool=false; var mut_incr:bool = false)
         var i:int=0
         while (i<5) 
             erase(genome, 0)
@@ -147,6 +157,31 @@ class critr
         if (random_int(seed_crit)%base_chance==0)
             unique_mutations[20]=true
             color = 0xFFF5DBBD
+        i = 0
+        while(i<length(pb))
+            phenotype_body[i] = pb[i]
+            if (random_int(seed_crit)%10==0)
+                phenotype_body[i] = phenotype_body[i]+(random_int(seed_crit)%2)*2-1
+            phenotype_body[i] = (phenotype_body[i]+36)%36
+            i++
+
+        if (pbc!=0x00000000)
+            phenotype_body_color = pbc
+            if (random_int(seed_crit)%10==0)
+                phenotype_body_color = phenotype_body_color + uint(4*4)
+            if (random_int(seed_crit)%10==0)
+                phenotype_body_color = phenotype_body_color + uint(1024*4)
+            if (random_int(seed_crit)%10==0)
+                phenotype_body_color = phenotype_body_color + uint(16384*4)
+            if (random_int(seed_crit)%10==0)
+                phenotype_body_color = phenotype_body_color - uint(4*4)
+            if (random_int(seed_crit)%10==0)
+                phenotype_body_color = phenotype_body_color - uint(1024*4)
+            if (random_int(seed_crit)%10==0)
+                phenotype_body_color = phenotype_body_color - uint(16384*4)
+            color = phenotype_body_color
+        else
+            phenotype_body_color = color
 
     def execute()
         var i: int = 0
@@ -288,7 +323,7 @@ class critr
                     var newSpec = new critr()
                     newSpec.x_loc = x_loc
                     newSpec.y_loc = y_loc
-                    newSpec->consumeGenome(genome,unique_mutations[15],unique_mutations[16],map.mut_incr)
+                    newSpec->consumeGenome(genome,phenotype_body,phenotype_body_color,unique_mutations[15],unique_mutations[16],map.mut_incr)
                     if (unique_mutations[6])
                         food=food/2
                         newSpec.food = newSpec.food + food
@@ -367,3 +402,48 @@ class critr
             getColorsG(genome[i],cl)
             i++
         return <- cl
+
+def convertUMtoName(var i: int)
+    if (i==0)
+        return "Short-term memory"
+    if (i==1)
+        return "Photosyntesis"
+    if (i==2)
+        return "Chemosynthesis"
+    if (i==3)
+        return "Predators"
+    if (i==4)
+        return "Longevity"
+    if (i==5)
+        return "Cunning"
+    if (i==6)
+        return "Caring"
+    if (i==7)
+        return "Long genome"
+    if (i==8)
+        return "Soloists"
+    if (i==9)
+        return "Social"
+    if (i==10)
+        return "Communicative"
+    if (i==11)
+        return "Effective"
+    if (i==12)
+        return "Nutritious"
+    if (i==13)
+        return "Precious"
+    if (i==14)
+        return "Chaotic"
+    if (i==15)
+        return "Logical"
+    if (i==16)
+        return "Complex"
+    if (i == 17)
+        return "Hypothalamus"
+    if (i == 18)
+        return "Unique"
+    if (i == 19)
+        return "Creative"
+    if (i == 20)
+        return "Binocular vision"
+    return "Unknown"

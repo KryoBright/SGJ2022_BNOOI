@@ -25,6 +25,18 @@ var active_enclosure: enclosure?
 var shop_buttons: array<shopButtonElement?>
 var enclosure_position: int = 0
 var enclosure_buttons: array<buttonElement?>
+var shelf_buttons: array<shelfButtonElement?>
+var energy_amount:int = 6070
+var chosen_crit:critr?
+var lost = false
+
+//Images
+var image_bodies: ImageHandle <- create_managed_image("sprites/Creature_body_2.png")
+var image_limbs: ImageHandle <- create_managed_image("sprites/Creature_limb.png")
+var image_buttons: ImageHandle <- create_managed_image("sprites/Button.png")
+var image_feed: ImageHandle <- create_managed_image("sprites/Button_feed.png")
+var image_pause: ImageHandle <- create_managed_image("sprites/Pause.png")
+var image_energy: ImageHandle <- create_managed_image("sprites/Energy.png")
 
 def readFileSection(var line:string;var startPos:int&)
     var i = startPos
@@ -65,7 +77,7 @@ def createCustomCriter(var mutationString,genomString:string; var cr:critr?)
     while (pos_i<length(mutationString))
         cr.unique_mutations[int(readFileSection(mutationString,pos_i))]=true
     pos_i = 0
-    cr->consumeGenome(constructGenome(genomString),false,false,false)
+    cr->consumeGenome(constructGenome(genomString),e_arr,0x00000000,false,false,false)
     return <- cr
 
 def setUpEnclosureCarousel()
@@ -99,6 +111,70 @@ def setUpEnclosureCarousel()
     button.id = enclosure_position+i-2
     button.pressed = (i == 2)
     push(enclosure_buttons,button)
+
+def drawInfoWindow(var spec: critr?)
+    rect(900,0,400,900,0xFFFFFFFF)
+    rect(900,0,150,150,0xFFFFFFFF)
+    fill_rect(902,2,146,146,0xFF333333)
+    enable_alpha_blend()
+    make_image_color_transparent(image_bodies,0xFFFFFFFF)
+    make_image_color_transparent(image_limbs,0xFFFFFFFF)
+    draw_image_region(image_limbs,925f,25f,float4(50*(spec.phenotype_body[4]%18),200*(spec.phenotype_body[4]/18),50,50),spec.phenotype_body_color)
+    draw_image_region(image_limbs,975f,25f,float4(50*(spec.phenotype_body[5]%18),50 + 200*(spec.phenotype_body[5]/18),50,50),spec.phenotype_body_color)
+    draw_image_region(image_limbs,975f,75f,float4(50*(spec.phenotype_body[6]%18),100 + 200*(spec.phenotype_body[6]/18),50,50),spec.phenotype_body_color)
+    draw_image_region(image_limbs,925f,75f,float4(50*(spec.phenotype_body[7]%18),150 + 200*(spec.phenotype_body[7]/18),50,50),spec.phenotype_body_color)
+    
+    draw_image_region(image_bodies,950f,50f,float4(25*(spec.phenotype_body[0]%18),100*(spec.phenotype_body[0]/18),25,25),spec.phenotype_body_color)
+    draw_image_region(image_bodies,975f,50f,float4(25*(spec.phenotype_body[1]%18),25 + 100*(spec.phenotype_body[1]/18),25,25),spec.phenotype_body_color)
+    draw_image_region(image_bodies,975f,75f,float4(25*(spec.phenotype_body[2]%18),50 + 100*(spec.phenotype_body[2]/18),25,25),spec.phenotype_body_color)
+    draw_image_region(image_bodies,950f,75f,float4(25*(spec.phenotype_body[3]%18),75 + 100*(spec.phenotype_body[3]/18),25,25),spec.phenotype_body_color)
+    
+    text_out(1070,50,spec.name,0xFFFFFFFF)
+    text_out(920,170,"Age:"+string(spec.lifetime),0xFFFF0000)
+    text_out(990,170,"Cost:"+string(spec->getCost()),0xFF00FF00)
+    text_out(1130,170,"Avrg.EP:"+string(float(spec.total_energy)/float(spec.lifetime)),0xFFa0a0FF)
+    text_out(920,210,"Genome:",0xFFFF00FF)
+    var cl: array<uint> <- spec->getColors()
+    var i = 0
+    while ((i<length(cl)))
+        fill_rect(904+(i%80)*4,240+(i/80)*4,4,4,cl[i])
+        i++
+    var d = 0
+    i=0
+    text_out(920,270,"Unique mutations:",0xFFFFFF00)
+    while (i<length(spec.unique_mutations))
+        if (spec.unique_mutations[i])
+            text_out(920,300+d*20,convertUMtoName(i),0xFFFFFF00)
+            d++
+        i++
+    rect(506+spec.x_loc*4,194+spec.y_loc*4,16,16,0xFFFFFF00)
+
+def drawEnergy()
+    var en = energy_amount
+    var postf = ""
+    if (en>10000)
+        en = en/1000
+        postf = "K"
+        if (en>10000)
+            en = en/1000
+            postf = "M"
+    text_out(320,20,"E:"+string(en)+postf,0xFFFFFF00)
+    draw_image_region(image_energy,290f,15f,float4(0,0,20,30))
+    if (lost)
+        text_out(320,40,"You have lost!\nWe allow you to keep playing tho.",0xFFFF0000)
+
+def saveGenome(var spec:critr?)
+    if (spec!=null)
+        var g_file=fopen("genome_"+spec.name+".txt","w")
+        var r = ""
+        var i = 0
+        while (i<length(spec.genome))
+            r = r + spec.genome[i]->getDescription()+" "
+            i++
+        fprint(g_file,r)
+        fclose(g_file)
+
+
 // 'initialize' runs once when game starts and every hot-reload
 [export]
 def initialize
@@ -116,7 +192,7 @@ def initialize
     push(all_enclosures,new enclosure())
     active_enclosure = all_enclosures[0]
 
-    var button = new buttonElement()
+    var button = new feedButtonElement()
     button.x = 512
     button.y = 450
     button.x_scale = 200
@@ -125,17 +201,21 @@ def initialize
     button.color_active = 0xFF008800
     button.text = "Feed"
     button.id = 0
+    button.ih = image_feed
+    button.img_index = 1
     push(all_buttons,button)
 
     button = new toggleButtonElement()
     button.x = 722
-    button.y = 350
+    button.y = 450
     button.x_scale = 50
     button.y_scale = 50
     button.color = 0xFF000000
     button.color_active = 0xFF008800
     button.text = "OM"
     button.id = 1
+    button.ih = image_buttons
+    button.img_index = 8
     push(all_buttons,button)
 
     var button1 = new radioButtonElement()
@@ -147,6 +227,8 @@ def initialize
     button1.color_active = 0xFF008800
     button1.text = "MIN"
     button1.id = 2
+    button1.ih = image_buttons
+    button1.img_index = 5
 
     var button2 = new radioButtonElement()
     button2.x = 722
@@ -157,6 +239,8 @@ def initialize
     button2.color_active = 0xFF008800
     button2.text = "MAX"
     button2.id = 3
+    button2.ih = image_buttons
+    button2.img_index = 6
 
     var button3 = new radioButtonElement()
     button3.x = 722
@@ -168,6 +252,8 @@ def initialize
     button3.text = "AUTO"
     button3.id = 4
     button3.pressed = true
+    button3.ih = image_buttons
+    button3.img_index = 7
 
     push(button1.otherButtons,button2)
     push(button1.otherButtons,button3)
@@ -189,6 +275,8 @@ def initialize
     button1.color_active = 0xFF008800
     button1.text = "RND"
     button1.id = 5
+    button1.ih = image_buttons
+    button1.img_index = 1
 
     button2 = new radioButtonElement()
     button2.x = 452
@@ -199,6 +287,8 @@ def initialize
     button2.color_active = 0xFF008800
     button2.text = "O"
     button2.id = 6
+    button2.ih = image_buttons
+    button2.img_index = 2
 
     button3 = new radioButtonElement()
     button3.x = 452
@@ -209,6 +299,8 @@ def initialize
     button3.color_active = 0xFF008800
     button3.text = "|O|"
     button3.id = 7
+    button3.ih = image_buttons
+    button3.img_index = 3
     
     var button4 = new radioButtonElement()
     button4.x = 452
@@ -220,6 +312,8 @@ def initialize
     button4.text = "CRN"
     button4.id = 8
     button4.pressed = true
+    button4.ih = image_buttons
+    button4.img_index = 4
 
     push(button1.otherButtons,button2)
     push(button1.otherButtons,button3)
@@ -248,6 +342,8 @@ def initialize
     button.color_active = 0xFF008800
     button.text = "|X|"
     button.id = 9
+    button.ih = image_buttons
+    button.img_index = 13
     push(all_buttons,button)
 
     button1 = new radioButtonElement()
@@ -259,6 +355,8 @@ def initialize
     button1.color_active = 0xFF008800
     button1.text = "A$"
     button1.id = 10
+    button1.ih = image_buttons
+    button1.img_index = 9
 
     button2 = new radioButtonElement()
     button2.x = 622
@@ -269,6 +367,8 @@ def initialize
     button2.color_active = 0xFF008800
     button2.text = "E$"
     button2.id = 11
+    button2.ih = image_buttons
+    button2.img_index = 10
 
     button3 = new radioButtonElement()
     button3.x = 672
@@ -279,6 +379,8 @@ def initialize
     button3.color_active = 0xFF008800
     button3.text = "C$"
     button3.id = 12
+    button3.ih = image_buttons
+    button3.img_index = 11
     
     button4 = new radioButtonElement()
     button4.x = 722
@@ -290,6 +392,8 @@ def initialize
     button4.text = "No $"
     button4.id = 13
     button4.pressed = true
+    button4.ih = image_buttons
+    button4.img_index = 12
 
     push(button1.otherButtons,button2)
     push(button1.otherButtons,button3)
@@ -308,6 +412,41 @@ def initialize
     push(all_buttons,button2)
     push(all_buttons,button3)
     push(all_buttons,button4)
+
+    button = new buttonElement()
+    button.x = 950
+    button.y = 500
+    button.x_scale = 300
+    button.y_scale = 50
+    button.color = 0xFF000000
+    button.color_active = 0xFF008800
+    button.text = "^Shelve^"
+    button.id = 14
+    push(all_buttons,button)
+
+    button = new buttonElement()
+    button.x = 950
+    button.y = 580
+    button.x_scale = 300
+    button.y_scale = 50
+    button.color = 0xFF000000
+    button.color_active = 0xFF008800
+    button.text = "Save genome to file"
+    button.id = 15
+    push(all_buttons,button)
+
+    button = new toggleButtonElement()
+    button.x = 50
+    button.y = 50
+    button.x_scale = 50
+    button.y_scale = 50
+    button.color = 0xFF000000
+    button.color_active = 0xFF008844
+    button.text = "||"
+    button.id = 16
+    button.ih = image_pause
+    button.img_index = 1
+    push(all_buttons,button)
 
     var z = 0
     while (z<5)
@@ -352,6 +491,8 @@ def act(dt: float)
         mouseCd--
     if (deltaT>1f/60f)
         if (active_enclosure!=null)
+            if (energy_amount<0)
+                lost = true
             active_enclosure.mut_incr=all_buttons[9].pressed
             if (active)
                 active_enclosure->act()
@@ -384,6 +525,14 @@ def act(dt: float)
                     enclosure_buttons[i]->process()
                     i++
 
+                i=0
+                while (i<length(shelf_buttons))
+                    shelf_buttons[i]->process()
+                    i++
+
+                var critTmp1 = active_enclosure->getCritAt((int(get_mouse_position()[0])-512)/4,(int(get_mouse_position()[1])-200)/4)
+                if (chosen_crit==null)||(critTmp1!=null)
+                    chosen_crit = critTmp1
             if (all_buttons[2].pressed)
                 loopAm = 15
             if (all_buttons[3].pressed)
@@ -408,7 +557,7 @@ def act(dt: float)
                     else 
                         if (critAm>30)&&(loopAm<15)
                             loopAm++
-            if (!all_buttons[1].pressed)&&(active)
+            if (all_buttons[1].pressed)&&(active)
                 loop++
                 if (loop>300)
                     active_enclosure->addFood(loopAm,strat)
@@ -426,10 +575,37 @@ def act(dt: float)
                 active_enclosure->sell(1)
             if (all_buttons[12].pressed)
                 active_enclosure->sell(2)
+            if (all_buttons[14].pressed)
+                if (chosen_crit!= null)
+                    var sbutton = new shelfButtonElement()
+                    sbutton.x = 500
+                    sbutton.y = 10
+                    sbutton.x_scale = 60
+                    sbutton.y_scale = 60
+                    sbutton.color = 0xFF000000
+                    sbutton.color_active = 0xFF008800
+                    sbutton.text = ""
+                    sbutton.id = 177013
+                    sbutton.spec = chosen_crit
+                    push(shelf_buttons,sbutton)
+                    active_enclosure->removeCrit(chosen_crit)
+            
+            if (all_buttons[15].pressed)
+                if (chosen_crit!= null)
+                    saveGenome(chosen_crit)
+            
+            if (all_buttons[16].pressed)&&(active)
+                all_buttons[16].text="|>"
+                active = false
+
+            if (!all_buttons[16].pressed)&&(!active)
+                all_buttons[16].text="||"
+                active = true
 
             i = 0
             while (i<length(shop_buttons))
                 if (shop_buttons[i].pressed)
+                    energy_amount = energy_amount - 1
                     var cr = shop_buttons[i].spec
                     cr.x_loc = random_int(seed)%50
                     cr.y_loc = random_int(seed)%50
@@ -458,6 +634,19 @@ def act(dt: float)
                    /* else
                         enclosure_position=enclosure_buttons[i].id*/ 
                 i++
+
+            i = 0
+            while (i<length(shelf_buttons))
+                if (shelf_buttons[i].pressed) 
+                    active_enclosure->addCritr(shelf_buttons[i].spec)
+                    erase(shelf_buttons,i)
+                i++
+
+            energy_amount = energy_amount + active_enclosure->getEnergy()
+            energy_amount = energy_amount - active_enclosure.foodCost
+            active_enclosure.foodCost = 0
+            if (!active_enclosure->checkCrit(chosen_crit))
+                chosen_crit=null
         deltaT=0f
 
     var msd=int(get_mouse_scroll_delta())+enclosure_position
@@ -476,7 +665,7 @@ def act(dt: float)
     if get_key(VK_R)
         loopAm = 0
     if get_key(VK_SPACE)
-        active = !active
+        all_buttons[16].pressed = !all_buttons[16].pressed
     return
 
 // this function will be called every frame after 'act',
@@ -485,8 +674,10 @@ def act(dt: float)
 def draw
     var en_x=512
     rect(en_x, 200, 200, 200, 0xFFF0F0F0)
-
+    drawEnergy()
     if (active_enclosure!=null)
+        if (chosen_crit!=null)
+            drawInfoWindow(chosen_crit)
         var i:int = 0
         while (i<length(active_enclosure.foodMap))
             if (active_enclosure.foodMap[i])
@@ -499,7 +690,8 @@ def draw
             i++
         i=0
         while (i<length(all_buttons))
-            all_buttons[i]->drawSelf()
+            if ((i!=14)&&(i!=15))||(chosen_crit!=null)
+                all_buttons[i]->drawSelf()
             i++
         i=0
         while (i<length(shop_buttons))
@@ -508,5 +700,10 @@ def draw
         i=0
         while (i<length(enclosure_buttons))
             enclosure_buttons[i]->drawSelf()
+            i++
+        i=0
+        while (i<length(shelf_buttons))
+            shelf_buttons[i].id = i
+            shelf_buttons[i]->drawSelf()
             i++
     return
