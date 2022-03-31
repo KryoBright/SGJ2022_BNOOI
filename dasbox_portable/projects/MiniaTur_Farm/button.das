@@ -13,6 +13,7 @@ class buttonElement
     id:int
     img_index:int = 0
     ih:ImageHandle
+    hover_text:string = ""
 
     def drawSelf()
         rect(x, y, x_scale, y_scale, 0xFFFFFFFF)
@@ -37,6 +38,18 @@ class buttonElement
 
     def reset()
         pressed = false
+
+    def onHover()
+        if (hover_text!="")
+            var mp = get_mouse_position()
+            var mx = int(mp[0])
+            var my = int(mp[1])
+            if (mx>x)&&(mx<x+x_scale)
+                if (my>y)&&(my<y+y_scale)
+                    rect(mx,my,400,50,0xFFFFFFFF)
+                    fill_rect(mx+2,my+2,396,46,0xFF000000)
+                    text_out(mx+20,my+3,hover_text,0xFFFFFFFF)
+
 
 class feedButtonElement: buttonElement
 

@@ -37,6 +37,7 @@ var image_buttons: ImageHandle <- create_managed_image("sprites/Button.png")
 var image_feed: ImageHandle <- create_managed_image("sprites/Button_feed.png")
 var image_pause: ImageHandle <- create_managed_image("sprites/Pause.png")
 var image_energy: ImageHandle <- create_managed_image("sprites/Energy.png")
+var image_reset: ImageHandle <- create_managed_image("sprites/Reset.png")
 
 def readFileSection(var line:string;var startPos:int&)
     var i = startPos
@@ -56,6 +57,9 @@ def constructGene(var genomString:string;var startPos:int&)
     if (r == "AGR")
         ac.first = constructGene(genomString,startPos)
         ac.second = constructGene(genomString,startPos)
+    if (r == "ARA")
+        ac.first = constructGene(genomString,startPos)
+        ac.second = constructGene(genomString,startPos)
     if (r == "CND")
         ac.outcome = constructGene(genomString,startPos)
     if (r == "LOP")
@@ -72,12 +76,25 @@ def constructGenome(var genomString:string)
         i = i + 1
     return <- resGenom
 
-def createCustomCriter(var mutationString,genomString:string; var cr:critr?) 
+def createCustomCriter(var cr:critr?; var fname:string;var number:int) 
+    var genes_file = fopen(fname,"r")
+    var name=fgets(genes_file)
+    var s1=fgets(genes_file)
+    var s2=fgets(genes_file)+" TRM"
+    var i = 1
+    while (i<number)
+        name=fgets(genes_file)
+        s1=fgets(genes_file)
+        s2=fgets(genes_file)+" TRM"
+        i++
     var pos_i:int = 0
-    while (pos_i<length(mutationString))
-        cr.unique_mutations[int(readFileSection(mutationString,pos_i))]=true
+    while (pos_i<length(s1))
+        cr.unique_mutations[int(readFileSection(s1,pos_i))]=true
     pos_i = 0
-    cr->consumeGenome(constructGenome(genomString),e_arr,0x00000000,false,false,false)
+    var clrT=uint(random_int(seed_crit)%255+(random_int(seed_crit)%255)*256+(random_int(seed_crit)%255)*256*256+255*16777216)
+    cr->consumeGenome(constructGenome(s2),e_arr,clrT,false,false,false)
+    cr.name = name
+    fclose(genes_file)
     return <- cr
 
 def setUpEnclosureCarousel()
@@ -165,7 +182,7 @@ def drawEnergy()
 
 def saveGenome(var spec:critr?)
     if (spec!=null)
-        var g_file=fopen("genome_"+spec.name+".txt","w")
+        var g_file=fopen("genomes/genome_"+spec.name+".txt","w")
         var r = ""
         var i = 0
         while (i<length(spec.genome))
@@ -203,6 +220,7 @@ def initialize
     button.id = 0
     button.ih = image_feed
     button.img_index = 1
+    button.hover_text = "Manually feed creatures"
     push(all_buttons,button)
 
     button = new toggleButtonElement()
@@ -216,6 +234,7 @@ def initialize
     button.id = 1
     button.ih = image_buttons
     button.img_index = 8
+    button.hover_text = "Feed creatures on schedule"
     push(all_buttons,button)
 
     var button1 = new radioButtonElement()
@@ -228,6 +247,7 @@ def initialize
     button1.text = "MIN"
     button1.id = 2
     button1.ih = image_buttons
+    button1.hover_text = "Minimise amount of food"
     button1.img_index = 5
 
     var button2 = new radioButtonElement()
@@ -240,6 +260,7 @@ def initialize
     button2.text = "MAX"
     button2.id = 3
     button2.ih = image_buttons
+    button2.hover_text = "Maximise amount of food"
     button2.img_index = 6
 
     var button3 = new radioButtonElement()
@@ -253,6 +274,7 @@ def initialize
     button3.id = 4
     button3.pressed = true
     button3.ih = image_buttons
+    button3.hover_text = "Amount of food is relative \n to number of creatures"
     button3.img_index = 7
 
     push(button1.otherButtons,button2)
@@ -277,6 +299,7 @@ def initialize
     button1.id = 5
     button1.ih = image_buttons
     button1.img_index = 1
+    button1.hover_text = "Randomise feeding pattern"
 
     button2 = new radioButtonElement()
     button2.x = 452
@@ -289,6 +312,7 @@ def initialize
     button2.id = 6
     button2.ih = image_buttons
     button2.img_index = 2
+    button2.hover_text = "Place food in circle pattern"
 
     button3 = new radioButtonElement()
     button3.x = 452
@@ -301,6 +325,7 @@ def initialize
     button3.id = 7
     button3.ih = image_buttons
     button3.img_index = 3
+    button3.hover_text = "Place food in inverse circle pattern"
     
     var button4 = new radioButtonElement()
     button4.x = 452
@@ -314,6 +339,7 @@ def initialize
     button4.pressed = true
     button4.ih = image_buttons
     button4.img_index = 4
+    button4.hover_text = "Place food in  two opposing corners"
 
     push(button1.otherButtons,button2)
     push(button1.otherButtons,button3)
@@ -344,6 +370,7 @@ def initialize
     button.id = 9
     button.ih = image_buttons
     button.img_index = 13
+    button.hover_text = "Induce mutations"
     push(all_buttons,button)
 
     button1 = new radioButtonElement()
@@ -357,6 +384,7 @@ def initialize
     button1.id = 10
     button1.ih = image_buttons
     button1.img_index = 9
+    button1.hover_text = "Autosell oldest creatures"
 
     button2 = new radioButtonElement()
     button2.x = 622
@@ -369,6 +397,7 @@ def initialize
     button2.id = 11
     button2.ih = image_buttons
     button2.img_index = 10
+    button2.hover_text = "Autosell most expensive creatures"
 
     button3 = new radioButtonElement()
     button3.x = 672
@@ -380,6 +409,7 @@ def initialize
     button3.text = "C$"
     button3.id = 12
     button3.ih = image_buttons
+    button3.hover_text = "Autosell cheapest creatures"
     button3.img_index = 11
     
     button4 = new radioButtonElement()
@@ -394,6 +424,7 @@ def initialize
     button4.pressed = true
     button4.ih = image_buttons
     button4.img_index = 12
+    button4.hover_text = "Disable autosell"
 
     push(button1.otherButtons,button2)
     push(button1.otherButtons,button3)
@@ -446,6 +477,21 @@ def initialize
     button.id = 16
     button.ih = image_pause
     button.img_index = 1
+    button.hover_text = "Pause / Resume"
+    push(all_buttons,button)
+
+    button = new buttonElement()
+    button.x = 105
+    button.y = 50
+    button.x_scale = 50
+    button.y_scale = 50
+    button.color = 0xFF000000
+    button.color_active = 0xFF008844
+    button.text = "R"
+    button.id = 16
+    button.ih = image_reset
+    button.img_index = 1
+    button.hover_text = "Reset"
     push(all_buttons,button)
 
     var z = 0
@@ -461,6 +507,23 @@ def initialize
         sbutton.id = z
         sbutton.spec = new critr()
         push(shop_buttons,sbutton)
+        z++
+    var iMTmp = 1
+    var mTmpSpec = createCustomCriter(new critr(),"custom_gene.txt",iMTmp)
+    while (mTmpSpec.name!="")
+        var sbutton = new shopButtonElement()
+        sbutton.x = 10
+        sbutton.y = 200
+        sbutton.x_scale = 200
+        sbutton.y_scale = 50
+        sbutton.color = 0xFF000000
+        sbutton.color_active = 0xFF008800
+        sbutton.text = ""
+        sbutton.id = z
+        sbutton.spec = mTmpSpec
+        push(shop_buttons,sbutton)
+        iMTmp++
+        mTmpSpec = createCustomCriter(new critr(),"custom_gene.txt",iMTmp)
         z++
 
     setUpEnclosureCarousel()
@@ -602,6 +665,14 @@ def act(dt: float)
                 all_buttons[16].text="||"
                 active = true
 
+            if (all_buttons[17].pressed)
+                clear(all_enclosures)
+                clear(all_buttons)
+                clear(shop_buttons)
+                energy_amount = 2000
+                lost = false
+                initialize()
+
             i = 0
             while (i<length(shop_buttons))
                 if (shop_buttons[i].pressed)
@@ -611,17 +682,21 @@ def act(dt: float)
                     cr.y_loc = random_int(seed)%50
                     active_enclosure->addCritr(cr)
                     erase(shop_buttons,i)
-                    var sbutton = new shopButtonElement()
-                    sbutton.x = 10
-                    sbutton.y = 200
-                    sbutton.x_scale = 200
-                    sbutton.y_scale = 50
-                    sbutton.color = 0xFF000000
-                    sbutton.color_active = 0xFF008800
-                    sbutton.text = ""
-                    sbutton.id = 4
-                    sbutton.spec = new critr()
-                    push(shop_buttons,sbutton)
+                    if (length(shop_buttons)<5)
+                        var sbutton = new shopButtonElement()
+                        sbutton.x = 10
+                        sbutton.y = 200
+                        sbutton.x_scale = 200
+                        sbutton.y_scale = 50
+                        sbutton.color = 0xFF000000
+                        sbutton.color_active = 0xFF008800
+                        sbutton.text = ""
+                        sbutton.id = 4
+                        if (random_int(seed)%20==0)
+                            sbutton.spec = createCustomCriter(new critr(),"genetic_presets.txt",random_int(seed)%12)
+                        else
+                            sbutton.spec = new critr()
+                        push(shop_buttons,sbutton)
                 i++
             
             i = 0
@@ -692,6 +767,11 @@ def draw
         while (i<length(all_buttons))
             if ((i!=14)&&(i!=15))||(chosen_crit!=null)
                 all_buttons[i]->drawSelf()
+            i++
+        i=0
+        while (i<length(all_buttons))
+            if ((i!=14)&&(i!=15))||(chosen_crit!=null)
+                all_buttons[i]->onHover()
             i++
         i=0
         while (i<length(shop_buttons))
