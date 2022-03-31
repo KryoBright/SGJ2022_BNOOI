@@ -205,7 +205,7 @@ def initialize
     seed_gene=seed
     seed_crit=seed
     seed_en=seed
-    set_window_title("MiniaTur Farm")
+    set_window_title("BNOOI")
     push(all_enclosures,new enclosure())
     active_enclosure = all_enclosures[0]
 
