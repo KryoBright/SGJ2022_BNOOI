@@ -9,11 +9,14 @@ class enclosure:Imap
     criters: array<critr?>
     foodCost: int = 0
     absEnergy: int = 0
+    keepFood:bool = false
     
     def enclosure()
-        maxCriters = 50
+        loopy=false
+        maxCriters = 500
         var i: int = 0
-        while (i<2500)
+		lin_size = 50
+        while (i<lin_size*lin_size)
             push(foodMap,false)
             i=i+1
             
@@ -27,9 +30,17 @@ class enclosure:Imap
                     criters[i]->act(self,i)
                 else
                     if (criters[i].unique_mutations[12])
-                        foodMap[criters[i].y_loc*50+criters[i].x_loc]=true
+                        foodMap[criters[i].y_loc*lin_size+criters[i].x_loc]=true
                     erase(criters,i)
             i=i+1
+
+    def updateFood()
+        if (length(foodMap)!=lin_size*lin_size)
+            clear(foodMap)
+            var i: int = 0
+            while (i<lin_size*lin_size)
+                push(foodMap,false)
+                i=i+1
 
     def getEnergy()
         var totEnergy: int = 0
@@ -45,16 +56,16 @@ class enclosure:Imap
     
     def addFood(var chance,strategy:int)
         var i: int = 0
-        while (i<2500)
-            var x = (i/50)-25
-            var y = (i%50)-25
+        while (i<lin_size*lin_size)
+            var x = (i/lin_size)-lin_size/2
+            var y = (i%lin_size)-lin_size/2
             var c:int = random_int(seed_en)
             var toPick = false
             if (strategy == 0)&&(c%chance==0)
                 toPick = true
-            if (x*x+y*y < 40*(16-chance)) && (strategy == 1)
+            if (x*x+y*y < ((lin_size/10) *8)*((lin_size/10) *3 + 1 - chance)) && (strategy == 1)
                 toPick = true
-            if (x*x+y*y > 40*chance) && (strategy == 2)
+            if (x*x+y*y > ((lin_size/10) *8)*chance) && (strategy == 2)
                 toPick = true
             if (strategy==3)&&(((x-y)>chance*2)||((y-x)>chance*2))
                 toPick = true
@@ -63,7 +74,8 @@ class enclosure:Imap
                 foodMap[i] = true
                 foodCost = foodCost + 1
             else
-                foodMap[i] = false
+                if (!keepFood)
+                    foodMap[i] = false
             i=i+1
 
     def addRandCritersMess()
@@ -171,18 +183,18 @@ class enclosure:Imap
         return 
 
     def override getFood(var x,y:int)
-        var x1 = (y+50)%50
+        var x1 = (y+lin_size)%lin_size
         while (x1<0)
-            x1 = (x1+50)%50
-        var y1 = (x+50)%50
+            x1 = (x1+lin_size)%lin_size
+        var y1 = (x+lin_size)%lin_size
         while (y1<0)
-            y1 = (y1+50)%50
-        return foodMap[x1*50+y1]
+            y1 = (y1+lin_size)%lin_size
+        return foodMap[x1*lin_size+y1]
 
     def override eatFood(var x,y:int)
-        var x1 = (y+50)%50
-        var y1 = (x+50)%50
-        foodMap[x1*50+y1]=false
+        var x1 = (y+lin_size)%lin_size
+        var y1 = (x+lin_size)%lin_size
+        foodMap[x1*lin_size+y1]=false
         return true
 
     def override addCritr(var crit:critr?)

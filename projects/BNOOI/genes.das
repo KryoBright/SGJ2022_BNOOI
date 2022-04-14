@@ -420,7 +420,7 @@ def getColorsG(var gene:Action?; var crs:array<uint>)
     if (code=="WRT")
         push(crs,0xFFFFFFFF)
     if (code=="ARA")
-        push(crs,0xFF9900FF)
+        push(crs,0xFFB96E6E)
         getColorsG(gene.first,crs)
         getColorsG(gene.second,crs)
     return 

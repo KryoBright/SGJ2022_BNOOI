@@ -1,6 +1,7 @@
 require genes
 require random
 require fio
+require strings
 
 var seed_crit:int4
 var save_file = fopen("savefile.txt","w")
@@ -11,6 +12,8 @@ class Imap
     commonBits:array<bool>
     maxCriters:int
     mut_incr:bool
+	lin_size:int
+    loopy:bool
 
     def getFood(var x,y:int)
         return false
@@ -41,11 +44,18 @@ class critr
     x_loc: int = 0
     y_loc: int = 0
     color:uint = 0xFFFF0000
-    name: string = ""
+    name: string = "000"
+    domainName:string = "Nameless"
+    specName:string = "Unnamed"
+    idName: string = "000"
     phenotype_body:array<int>
     phenotype_body_color: uint = 0xFFFF0000
+    dif1:int = 0
+    dif2:int = 0
 
     def critr() 
+        domainName = getRandomDomainName()
+        specName = getRandomSpecName()
         var i:int=0
         while (i<5) 
             push(genome, createRandomAction(seed_crit,2))
@@ -61,10 +71,10 @@ class critr
             push(unique_mutations, false)
             i=i+1
 
-        i = 0
-        while(i<5)
+        /*i = 0
+        while(i<4)
             name = name + string(random_int(seed_crit)%10)
-            i++
+            i++/=*/
             
         i = 0
         while(i<8)
@@ -75,44 +85,64 @@ class critr
         color = phenotype_body_color
         direction = random_int(seed_crit)%4
     
-    def consumeGenome(var newGenome: array<Action?>&; pb:array<int>; pbc:uint; var logic:bool=false; var mem:bool=false; var mut_incr:bool = false)
+    def consumeGenome(var newGenome: array<Action?>&; pb:array<int>; pbc:uint; var logic:bool=false; var mem:bool=false; var mut_incr:bool = false; var diff1:int = 0;var diff2:int = 0)
         var i:int=0
         while (i<5) 
             erase(genome, 0)
             i=i+1
         i=0
+        dif1 = diff1
+        dif2 = diff2
         var base_chance = 200
         if (mut_incr)
             base_chance = 100
         while (i<length(newGenome)) 
             if (random_int(seed_crit)%(base_chance/20)==0)
                 push(genome, mutate(newGenome[i]->createCopy(),seed_crit,logic,mem))
+                dif1 = dif1 + 1
+                dif2 = dif2 + 1
             else
                 push(genome, newGenome[i]->createCopy())
             i=i+1
         color = 0xFFFFFF00
         if (random_int(seed_crit)%base_chance==0)
+            dif1 = dif1 + 5
+            dif2 = dif2 + 5
             unique_mutations[0]=true
             color = 0xFF00FFFF
         if (random_int(seed_crit)%base_chance==0)
+            dif1 = dif1 + 5
+            dif2 = dif2 + 5
             unique_mutations[1]=true
             color = 0xFF00FFFF
         if (random_int(seed_crit)%base_chance==0)
+            dif1 = dif1 + 5
+            dif2 = dif2 + 5
             unique_mutations[2]=true
             color = 0xFF00FF55
         if (random_int(seed_crit)%base_chance==0)
+            dif1 = dif1 + 5
+            dif2 = dif2 + 5
             unique_mutations[3]=true
             color = 0xFFFF009D
         if (random_int(seed_crit)%base_chance==0)
+            dif1 = dif1 + 5
+            dif2 = dif2 + 5
             unique_mutations[4]=true
             color = 0xFF747474
         if (random_int(seed_crit)%base_chance==0)
+            dif1 = dif1 + 5
+            dif2 = dif2 + 5
             unique_mutations[5]=true
             color = 0xFF0400FF
         if (random_int(seed_crit)%base_chance==0)
+            dif1 = dif1 + 5
+            dif2 = dif2 + 5
             unique_mutations[6]=true
             color = 0xFFE680FF
         if (random_int(seed_crit)%base_chance==0)
+            dif1 = dif1 + 5
+            dif2 = dif2 + 5
             unique_mutations[7]=true
             color = 0xFF32003F
             i=0
@@ -120,41 +150,65 @@ class critr
                 push(genome, createRandomAction(seed_crit,0,logic,mem))
                 i=i+1
         if (random_int(seed_crit)%base_chance==0)
+            dif1 = dif1 + 5
+            dif2 = dif2 + 5
             unique_mutations[8]=true
             color = 0xFFFFFFFF
         if (random_int(seed_crit)%base_chance==0)
+            dif1 = dif1 + 5
+            dif2 = dif2 + 5
             if (!unique_mutations[8])
                 unique_mutations[9]=true
                 color = 0xFFEEFFEE
         if (random_int(seed_crit)%base_chance==0)
+            dif1 = dif1 + 5
+            dif2 = dif2 + 5
             unique_mutations[10]=true
             color = 0xFF33FF00
         if (random_int(seed_crit)%base_chance==0)
+            dif1 = dif1 + 5
+            dif2 = dif2 + 5
             unique_mutations[11]=true
             color = 0xFF00FFBF
         if (random_int(seed_crit)%base_chance==0)
+            dif1 = dif1 + 5
+            dif2 = dif2 + 5
             unique_mutations[12]=true
             color = 0xFFFF00DD
         if (random_int(seed_crit)%base_chance==0)
+            dif1 = dif1 + 5
+            dif2 = dif2 + 5
             unique_mutations[13]=true
             color = 0xFFFFD000
         if (random_int(seed_crit)%base_chance==0)
+            dif1 = dif1 + 5
+            dif2 = dif2 + 5
             unique_mutations[14]=true
             color = 0xFF2600FF
         if (random_int(seed_crit)%base_chance==0)
+            dif1 = dif1 + 5
+            dif2 = dif2 + 5
             unique_mutations[15]=true
             color = 0xFF959695
         if (random_int(seed_crit)%base_chance==0)
+            dif1 = dif1 + 5
+            dif2 = dif2 + 5
             unique_mutations[16]=true
             color = 0xFFD2FCC8
         if (random_int(seed_crit)%base_chance==0)
+            dif1 = dif1 + 5
+            dif2 = dif2 + 5
             unique_mutations[17]=true
             color = 0xFFBDC3F5
         if (random_int(seed_crit)%base_chance==0)
+            dif1 = dif1 + 5
+            dif2 = dif2 + 5
             unique_mutations[18]=true
             color = 0xFFF5DBBD
         // 19 - creative
         if (random_int(seed_crit)%base_chance==0)
+            dif1 = dif1 + 5
+            dif2 = dif2 + 5
             unique_mutations[20]=true
             color = 0xFFF5DBBD
         i = 0
@@ -285,17 +339,19 @@ class critr
         direction=direction%4
         if (memory[7])
             if (direction == 0)
-                if (x_loc<49)
+                if (x_loc<map.lin_size-1)||(map.loopy)
                     x_loc=x_loc+1
             if (direction == 1)
-                if (y_loc<49)
+                if (y_loc<map.lin_size-1)||(map.loopy)
                     y_loc=y_loc+1
             if (direction == 2)
-                if (x_loc>0)
+                if (x_loc>0)||(map.loopy)
                     x_loc=x_loc-1
             if (direction == 3)
-                if (y_loc>0)
+                if (y_loc>0)||(map.loopy)
                     y_loc=y_loc-1
+        x_loc=(x_loc+map.lin_size)%map.lin_size
+        y_loc=(y_loc+map.lin_size)%map.lin_size
         if (memory[8])
             if (!unique_mutations[19])
                 food = food - 1
@@ -323,7 +379,15 @@ class critr
                     var newSpec = new critr()
                     newSpec.x_loc = x_loc
                     newSpec.y_loc = y_loc
-                    newSpec->consumeGenome(genome,phenotype_body,phenotype_body_color,unique_mutations[15],unique_mutations[16],map.mut_incr)
+                    newSpec->consumeGenome(genome,phenotype_body,phenotype_body_color,unique_mutations[15],unique_mutations[16],map.mut_incr,dif1,dif2)
+                    newSpec.domainName = domainName
+                    newSpec.specName = specName
+                    if (newSpec.dif1>15)
+                        newSpec.specName = getRandomSpecName()
+                        newSpec.dif1 = newSpec.dif1-15
+                    if (newSpec.dif2>100)
+                        newSpec.domainName = getRandomDomainName()
+                        newSpec.dif2 = newSpec.dif2-100
                     if (unique_mutations[6])
                         food=food/2
                         newSpec.food = newSpec.food + food
@@ -403,6 +467,16 @@ class critr
             i++
         return <- cl
 
+    def getInd()
+        var ind:string = string(dif1)
+        while (length(ind)<3)
+            ind = "0" + ind
+        return ind
+
+    def getName()
+        var ind:string = getInd()
+        return to_char(character_at(domainName,0)) + to_char(character_at(specName,0)) + ind
+
 def convertUMtoName(var i: int)
     if (i==0)
         return "Short-term memory"
@@ -447,3 +521,54 @@ def convertUMtoName(var i: int)
     if (i == 20)
         return "Binocular vision"
     return "Unknown"
+
+def getRandomSpecName()
+    var i:int = random_int(seed_crit)%10
+    if (i==0)
+        return "Aresus"
+    if (i==1)
+        return "Bealis"
+    if (i==2)
+        return "Conty"
+    if (i==3)
+        return "Deimos"
+    if (i==4)
+        return "Entaro"
+    if (i==5)
+        return "Faersis"
+    if (i==6)
+        return "Gole"
+    if (i==7)
+        return "Horreir"
+    if (i==8)
+        return "I"
+    if (i==9)
+        return "Jomorph"
+    if (i==10)
+        return "Kuylaar"
+    return "Unknown"
+
+def getRandomDomainName()
+    var i:int = random_int(seed_crit)%26 + character_at("A",0)
+    var name_r:string = to_char(i)
+    var z:int = random_int(seed_crit)%5 + 2
+    while (z>0)
+        i = random_int(seed_crit)%26 + character_at("a",0)
+        name_r = name_r + to_char(i)
+        z = z-1
+    i = random_int(seed_crit)%8
+    if (i==0)
+        name_r = name_r + "sus"
+    if (i==1)
+        name_r = name_r + "sis"
+    if (i==2)
+        name_r = name_r + "os"
+    if (i==3)
+        name_r = name_r + "es"
+    if (i==4)
+        name_r = name_r + "o"
+    if (i==5)
+        name_r = name_r + "e"
+    if (i==6)
+        name_r = name_r + "y"
+    return name_r

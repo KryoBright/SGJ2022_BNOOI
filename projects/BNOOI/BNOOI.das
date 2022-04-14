@@ -92,8 +92,14 @@ def createCustomCriter(var cr:critr?; var fname:string;var number:int)
         cr.unique_mutations[int(readFileSection(s1,pos_i))]=true
     pos_i = 0
     var clrT=uint(random_int(seed_crit)%255+(random_int(seed_crit)%255)*256+(random_int(seed_crit)%255)*256*256+255*16777216)
-    cr->consumeGenome(constructGenome(s2),e_arr,clrT,false,false,false)
+    cr->consumeGenome(constructGenome(s2),e_arr,clrT,false,false,false,0,0)
     cr.name = name
+
+    var base:string = "Base"
+    cr.domainName = name
+    cr.specName = base
+    cr.idName = "001"
+   // cr.name = "0001" 
     fclose(genes_file)
     return <- cr
 
@@ -146,7 +152,9 @@ def drawInfoWindow(var spec: critr?)
     draw_image_region(image_bodies,975f,75f,float4(25*(spec.phenotype_body[2]%18),50 + 100*(spec.phenotype_body[2]/18),25,25),spec.phenotype_body_color)
     draw_image_region(image_bodies,950f,75f,float4(25*(spec.phenotype_body[3]%18),75 + 100*(spec.phenotype_body[3]/18),25,25),spec.phenotype_body_color)
     
-    text_out(1070,50,spec.name,0xFFFFFFFF)
+    text_out(1070,50,spec.domainName,0xFFFFFFFF)
+    text_out(1070,85,spec.specName,0xFFFFFFFF)
+    text_out(1070,120,spec->getInd(),0xFFFFFFFF)
     text_out(920,170,"Age:"+string(spec.lifetime),0xFFFF0000)
     text_out(990,170,"Cost:"+string(spec->getCost()),0xFF00FF00)
     text_out(1130,170,"Avrg.EP:"+string(float(spec.total_energy)/float(spec.lifetime)),0xFFa0a0FF)
@@ -164,7 +172,34 @@ def drawInfoWindow(var spec: critr?)
             text_out(920,300+d*20,convertUMtoName(i),0xFFFFFF00)
             d++
         i++
-    rect(506+spec.x_loc*4,194+spec.y_loc*4,16,16,0xFFFFFF00)
+    var en_x = 637-active_enclosure.lin_size*2
+    var en_y = 325-active_enclosure.lin_size*2
+    rect(en_x-6+spec.x_loc*4,en_y-6+spec.y_loc*4,16,16,0xFFFFFF00)
+
+def drawMiniInfoWindow(var spec: critr?; var x,y:float)
+    rect(int(x),int(y),400,150,0xFFFFFFFF)
+    fill_rect(int(x)-1,int(y)+1,398,148,0xFF000000)
+    rect(int(x),int(y),150,150,0xFFFFFFFF)
+    fill_rect(int(x)+2,int(y)+2,146,146,0xFF333333)
+    enable_alpha_blend()
+    make_image_color_transparent(image_bodies,0xFFFFFFFF)
+    make_image_color_transparent(image_limbs,0xFFFFFFFF)
+    draw_image_region(image_limbs,x+25f,y+25f,float4(50*(spec.phenotype_body[4]%18),200*(spec.phenotype_body[4]/18),50,50),spec.phenotype_body_color)
+    draw_image_region(image_limbs,x+75f,y+25f,float4(50*(spec.phenotype_body[5]%18),50 + 200*(spec.phenotype_body[5]/18),50,50),spec.phenotype_body_color)
+    draw_image_region(image_limbs,x+75f,y+75f,float4(50*(spec.phenotype_body[6]%18),100 + 200*(spec.phenotype_body[6]/18),50,50),spec.phenotype_body_color)
+    draw_image_region(image_limbs,x+25f,y+75f,float4(50*(spec.phenotype_body[7]%18),150 + 200*(spec.phenotype_body[7]/18),50,50),spec.phenotype_body_color)
+    
+    draw_image_region(image_bodies,x+50f,y+50f,float4(25*(spec.phenotype_body[0]%18),100*(spec.phenotype_body[0]/18),25,25),spec.phenotype_body_color)
+    draw_image_region(image_bodies,x+75f,y+50f,float4(25*(spec.phenotype_body[1]%18),25 + 100*(spec.phenotype_body[1]/18),25,25),spec.phenotype_body_color)
+    draw_image_region(image_bodies,x+75f,y+75f,float4(25*(spec.phenotype_body[2]%18),50 + 100*(spec.phenotype_body[2]/18),25,25),spec.phenotype_body_color)
+    draw_image_region(image_bodies,x+50f,y+75f,float4(25*(spec.phenotype_body[3]%18),75 + 100*(spec.phenotype_body[3]/18),25,25),spec.phenotype_body_color)
+    
+    text_out(int(x)+170,int(y)+50,spec.domainName,0xFFFFFFFF)
+    text_out(int(x)+170,int(y)+85,spec.specName,0xFFFFFFFF)
+    text_out(int(x)+170,int(y)+120,spec->getInd(),0xFFFFFFFF)
+    var en_x = 637-active_enclosure.lin_size*2
+    var en_y = 325-active_enclosure.lin_size*2
+    rect(en_x-6+spec.x_loc*4,en_y-6+spec.y_loc*4,16,16,0xFF00FFFF)
 
 def drawEnergy()
     var en = energy_amount
@@ -488,10 +523,124 @@ def initialize
     button.color = 0xFF000000
     button.color_active = 0xFF008844
     button.text = "R"
-    button.id = 16
+    button.id = 17
     button.ih = image_reset
     button.img_index = 1
     button.hover_text = "Reset"
+    push(all_buttons,button)
+
+    button1 = new radioButtonElement()
+    button1.x = 210
+    button1.y = 200
+    button1.x_scale = 50
+    button1.y_scale = 50
+    button1.color = 0xFF000000
+    button1.color_active = 0xFF008800
+    button1.text = "S"
+    button1.pressed = true
+    button1.id = 18
+    button1.hover_text = "Small enclosure"
+
+    button2 = new radioButtonElement()
+    button2.x = 210
+    button2.y = 250
+    button2.x_scale = 50
+    button2.y_scale = 50
+    button2.color = 0xFF000000
+    button2.color_active = 0xFF008800
+    button2.text = "L"
+    button2.id = 19
+    button2.hover_text = "Average enclosure"
+
+    button3 = new radioButtonElement()
+    button3.x = 210
+    button3.y = 300
+    button3.x_scale = 50
+    button3.y_scale = 50
+    button3.color = 0xFF000000
+    button3.color_active = 0xFF008800
+    button3.text = "XL"
+    button3.id = 20
+    button3.hover_text = "Big enclosure"
+
+    push(button1.otherButtons,button2)
+    push(button1.otherButtons,button3)
+    push(button2.otherButtons,button1)
+    push(button2.otherButtons,button3)
+    push(button3.otherButtons,button2)
+    push(button3.otherButtons,button1)
+
+    push(all_buttons,button1)
+    push(all_buttons,button2)
+    push(all_buttons,button3)
+    
+    button1 = new radioButtonElement()
+    button1.x = 260
+    button1.y = 200
+    button1.x_scale = 50
+    button1.y_scale = 50
+    button1.color = 0xFF000000
+    button1.color_active = 0xFF008800
+    button1.text = "x50"
+    button1.pressed = true
+    button1.id = 21
+    button1.hover_text = "Limit to 50 creatures"
+
+    button2 = new radioButtonElement()
+    button2.x = 260
+    button2.y = 250
+    button2.x_scale = 50
+    button2.y_scale = 50
+    button2.color = 0xFF000000
+    button2.color_active = 0xFF008800
+    button2.text = "x100"
+    button2.id = 22
+    button2.hover_text = "Limit to 100 creatures"
+
+    button3 = new radioButtonElement()
+    button3.x = 260
+    button3.y = 300
+    button3.x_scale = 50
+    button3.y_scale = 50
+    button3.color = 0xFF000000
+    button3.color_active = 0xFF008800
+    button3.text = "x500"
+    button3.id = 23
+    button3.hover_text = "Limit to 500 creatures"
+
+    push(button1.otherButtons,button2)
+    push(button1.otherButtons,button3)
+    push(button2.otherButtons,button1)
+    push(button2.otherButtons,button3)
+    push(button3.otherButtons,button2)
+    push(button3.otherButtons,button1)
+
+    push(all_buttons,button1)
+    push(all_buttons,button2)
+    push(all_buttons,button3)
+    
+    button = new toggleButtonElement()
+    button.x = 310
+    button.y = 200
+    button.x_scale = 50
+    button.y_scale = 50
+    button.color = 0xFF000000
+    button.color_active = 0xFF008844
+    button.text = ">-<"
+    button.id = 24
+    button.hover_text = "Loop enclosure"
+    push(all_buttons,button)
+
+    button = new toggleButtonElement()
+    button.x = 310
+    button.y = 250
+    button.x_scale = 50
+    button.y_scale = 50
+    button.color = 0xFF000000
+    button.color_active = 0xFF008844
+    button.text = "/|\\"
+    button.id = 25
+    button.hover_text = "Keep food"
     push(all_buttons,button)
 
     var z = 0
@@ -506,6 +655,8 @@ def initialize
         sbutton.text = ""
         sbutton.id = z
         sbutton.spec = new critr()
+        sbutton.spec.x_loc = random_int(seed)%50
+        sbutton.spec.y_loc = random_int(seed)%50
         push(shop_buttons,sbutton)
         z++
     var iMTmp = 1
@@ -521,6 +672,8 @@ def initialize
         sbutton.text = ""
         sbutton.id = z
         sbutton.spec = mTmpSpec
+        sbutton.spec.x_loc = random_int(seed)%50
+        sbutton.spec.y_loc = random_int(seed)%50
         push(shop_buttons,sbutton)
         iMTmp++
         mTmpSpec = createCustomCriter(new critr(),"custom_gene.txt",iMTmp)
@@ -593,11 +746,14 @@ def act(dt: float)
                     shelf_buttons[i]->process()
                     i++
 
-                var critTmp1 = active_enclosure->getCritAt((int(get_mouse_position()[0])-512)/4,(int(get_mouse_position()[1])-200)/4)
+                
+                var en_x = 637-active_enclosure.lin_size*2
+                var en_y = 325-active_enclosure.lin_size*2
+                var critTmp1 = active_enclosure->getCritAt((int(get_mouse_position()[0])-en_x)/4,(int(get_mouse_position()[1])-en_y)/4)
                 if (chosen_crit==null)||(critTmp1!=null)
                     chosen_crit = critTmp1
             if (all_buttons[2].pressed)
-                loopAm = 15
+                loopAm = (active_enclosure.lin_size/10) *3
             if (all_buttons[3].pressed)
                 loopAm = 1
             
@@ -615,10 +771,10 @@ def act(dt: float)
                 active_enclosure->addFood(loopAm,strat) 
                 if (all_buttons[4].pressed)
                     var critAm = active_enclosure->getAmount()
-                    if (critAm<20)&&(loopAm>1)
+                    if (critAm<(active_enclosure.maxCriters/10)*4)&&(loopAm>1)
                         loopAm--
                     else 
-                        if (critAm>30)&&(loopAm<15)
+                        if (critAm>(active_enclosure.maxCriters/10)*6)&&(loopAm<(active_enclosure.lin_size/10) *3)
                             loopAm++
             if (all_buttons[1].pressed)&&(active)
                 loop++
@@ -627,10 +783,10 @@ def act(dt: float)
                     loop = 0     
                     if (all_buttons[4].pressed)
                         var critAm = active_enclosure->getAmount()
-                        if (critAm<20)&&(loopAm>1)
+                        if (critAm<(active_enclosure.maxCriters/10)*4)&&(loopAm>1)
                             loopAm--
                         else 
-                            if (critAm>30)&&(loopAm<15)
+                            if (critAm>(active_enclosure.maxCriters/10)*6)&&(loopAm<(active_enclosure.lin_size/10) *3)
                                 loopAm++
             if (all_buttons[10].pressed)
                 active_enclosure->sell(0)
@@ -672,14 +828,28 @@ def act(dt: float)
                 energy_amount = 2000
                 lost = false
                 initialize()
-
+            if (all_buttons[18].pressed)
+                active_enclosure.lin_size=50
+                active_enclosure->updateFood()
+            if (all_buttons[19].pressed)
+                active_enclosure.lin_size=75
+                active_enclosure->updateFood()
+            if (all_buttons[20].pressed)
+                active_enclosure.lin_size=100
+                active_enclosure->updateFood()
+            if (all_buttons[21].pressed)
+                active_enclosure.maxCriters = 50
+            if (all_buttons[22].pressed)
+                active_enclosure.maxCriters = 100
+            if (all_buttons[23].pressed)
+                active_enclosure.maxCriters = 500
+            active_enclosure.loopy = all_buttons[24].pressed
+            active_enclosure.keepFood = all_buttons[25].pressed
             i = 0
             while (i<length(shop_buttons))
                 if (shop_buttons[i].pressed)
                     energy_amount = energy_amount - 1
                     var cr = shop_buttons[i].spec
-                    cr.x_loc = random_int(seed)%50
-                    cr.y_loc = random_int(seed)%50
                     active_enclosure->addCritr(cr)
                     erase(shop_buttons,i)
                     if (length(shop_buttons)<5)
@@ -694,8 +864,12 @@ def act(dt: float)
                         sbutton.id = 4
                         if (random_int(seed)%20==0)
                             sbutton.spec = createCustomCriter(new critr(),"genetic_presets.txt",random_int(seed)%12)
+                            sbutton.spec.x_loc = random_int(seed)%50
+                            sbutton.spec.y_loc = random_int(seed)%50
                         else
                             sbutton.spec = new critr()
+                            sbutton.spec.x_loc = random_int(seed)%50
+                            sbutton.spec.y_loc = random_int(seed)%50
                         push(shop_buttons,sbutton)
                 i++
             
@@ -733,6 +907,17 @@ def act(dt: float)
         push(all_enclosures,new enclosure())
         active_enclosure = all_enclosures[length(all_enclosures)-1]
         msd=length(all_enclosures)-1
+
+    
+    all_buttons[18].pressed = (active_enclosure.lin_size == 50)
+    all_buttons[19].pressed = (active_enclosure.lin_size == 75)
+    all_buttons[20].pressed = (active_enclosure.lin_size == 100)
+    all_buttons[21].pressed = (active_enclosure.maxCriters == 50)
+    all_buttons[22].pressed = (active_enclosure.maxCriters == 100)
+    all_buttons[23].pressed = (active_enclosure.maxCriters == 500)
+    all_buttons[24].pressed = active_enclosure.loopy
+    all_buttons[25].pressed = active_enclosure.keepFood 
+
     enclosure_position=msd
     setUpEnclosureCarousel()
     if get_key(VK_ESCAPE)
@@ -747,24 +932,38 @@ def act(dt: float)
 // you can draw anything in this function
 [export]
 def draw
-    var en_x=512
-    rect(en_x, 200, 200, 200, 0xFFF0F0F0)
     drawEnergy()
     if (active_enclosure!=null)
+        var en_x = 637-active_enclosure.lin_size*2
+        var en_y = 325-active_enclosure.lin_size*2
+		rect(en_x, en_y, active_enclosure.lin_size*4, active_enclosure.lin_size*4, 0xFFF0F0F0)
         if (chosen_crit!=null)
             drawInfoWindow(chosen_crit)
         var i:int = 0
         while (i<length(active_enclosure.foodMap))
             if (active_enclosure.foodMap[i])
-                rect(en_x+(i%50)*4,200+(i/50)*4,4,4,0xFF00FF00)
+                rect(en_x+(i%active_enclosure.lin_size)*4,en_y+(i/active_enclosure.lin_size)*4,4,4,0xFF00FF00)
             i++
         i=0
         while (i<length(active_enclosure.criters))
             var crit = active_enclosure.criters[i]
-            rect(en_x+crit.x_loc*4,200+crit.y_loc*4,4,4,crit.color)
+            rect(en_x+crit.x_loc*4,en_y+crit.y_loc*4,4,4,crit.color)
             i++
         i=0
         while (i<length(all_buttons))
+			if (all_buttons[i].id==0)
+				all_buttons[i].x = 412 + 100 - 25 
+			if (all_buttons[i].id<2)
+				all_buttons[i].y = 140 + 100 * 4
+            else 
+                if (all_buttons[i].id<5)
+				    all_buttons[i].x =  452 + 100*4 
+                else 
+                    if (all_buttons[i].id<9)
+                        all_buttons[i].x =  452-75
+                    else   
+                        if (all_buttons[i].id<14)
+                            all_buttons[i].y = 150-75
             if ((i!=14)&&(i!=15))||(chosen_crit!=null)
                 all_buttons[i]->drawSelf()
             i++
@@ -778,6 +977,14 @@ def draw
             shop_buttons[i]->drawSelf()
             i++
         i=0
+        while (i<length(shop_buttons))
+            if (shop_buttons[i]->onHover())     
+                var mp = get_mouse_position()
+                var mx = mp[0]
+                var my = mp[1]
+                drawMiniInfoWindow(shop_buttons[i].spec,mx,my)
+            i++
+        i=0
         while (i<length(enclosure_buttons))
             enclosure_buttons[i]->drawSelf()
             i++
@@ -786,4 +993,15 @@ def draw
             shelf_buttons[i].id = i
             shelf_buttons[i]->drawSelf()
             i++
+        i=0
+        while (i<length(shelf_buttons))
+            shelf_buttons[i].id = i
+            if (shelf_buttons[i]->onHover())     
+                var mp = get_mouse_position()
+                var mx = mp[0]
+                var my = mp[1]
+                drawMiniInfoWindow(shelf_buttons[i].spec,mx,my)
+            i++
+	else	
+		rect(200, 200, 200, 200, 0xFFF0F0F0)
     return

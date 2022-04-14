@@ -40,15 +40,17 @@ class buttonElement
         pressed = false
 
     def onHover()
-        if (hover_text!="")
-            var mp = get_mouse_position()
-            var mx = int(mp[0])
-            var my = int(mp[1])
-            if (mx>x)&&(mx<x+x_scale)
-                if (my>y)&&(my<y+y_scale)
+        var mp = get_mouse_position()
+        var mx = int(mp[0])
+        var my = int(mp[1])
+        if (mx>x)&&(mx<x+x_scale)
+            if (my>y)&&(my<y+y_scale)
+                if (hover_text!="")
                     rect(mx,my,400,50,0xFFFFFFFF)
                     fill_rect(mx+2,my+2,396,46,0xFF000000)
                     text_out(mx+20,my+3,hover_text,0xFFFFFFFF)
+                return true
+        return false
 
 
 class feedButtonElement: buttonElement
@@ -111,7 +113,7 @@ class shopButtonElement: buttonElement
                 pressed = true
 
     def override drawSelf()
-        text = spec.name
+        text = spec->getName()
         rect(x, y+id*y_scale, x_scale, y_scale, 0xFFFFFFFF)
         if (pressed)
             fill_rect(x+2, y+2+id*y_scale, x_scale-4, y_scale-4, color_active)
@@ -126,6 +128,19 @@ class shopButtonElement: buttonElement
             fill_rect(x+2+i*2,y+40+id*y_scale,2,2,cl[i])
             i++
 
+    def override onHover()
+        var mp = get_mouse_position()
+        var mx = int(mp[0])
+        var my = int(mp[1])-id*y_scale
+        if (mx>x)&&(mx<x+x_scale)
+            if (my>y)&&(my<y+y_scale)
+                if (hover_text!="")
+                    rect(mx,my,400,50,0xFFFFFFFF)
+                    fill_rect(mx+2,my+2,396,46,0xFF000000)
+                    text_out(mx+20,my+3,hover_text,0xFFFFFFFF)
+                return true
+        return false
+
 class shelfButtonElement : buttonElement
 
     spec: critr?
@@ -139,7 +154,7 @@ class shelfButtonElement : buttonElement
                 pressed = true
 
     def override drawSelf()
-        text = spec.name
+        text = spec->getName()
         rect(x+id*(x_scale+5), y, x_scale, y_scale, 0xFFFFFFFF)
         if (pressed)
             fill_rect(x+2+id*(x_scale+5), y+2, x_scale-4, y_scale-4, color_active)
@@ -149,3 +164,16 @@ class shelfButtonElement : buttonElement
             text_out(x+5+id*(x_scale+5), y+40, text, 0xFFFFFFFF)
         fill_rect(x+5+id*(x_scale+5),y+5,18,18,spec.color)
         fill_rect(x+11+id*(x_scale+5),y+11,6,6,0xFF000000)
+        
+    def override onHover()
+        var mp = get_mouse_position()
+        var mx = int(mp[0])-id*(x_scale+5)
+        var my = int(mp[1])
+        if (mx>x)&&(mx<x+x_scale)
+            if (my>y)&&(my<y+y_scale)
+                if (hover_text!="")
+                    rect(mx,my,400,50,0xFFFFFFFF)
+                    fill_rect(mx+2,my+2,396,46,0xFF000000)
+                    text_out(mx+20,my+3,hover_text,0xFFFFFFFF)
+                return true
+        return false
