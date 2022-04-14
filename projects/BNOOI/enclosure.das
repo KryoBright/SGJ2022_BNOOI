@@ -1,7 +1,9 @@
 require critrs
 require random
+require daslib/media
 
 var seed_en:int4
+var food_image: ImageHandle <- create_managed_image("texture.jpg")
 
 class enclosure:Imap
 
@@ -69,6 +71,11 @@ class enclosure:Imap
                 toPick = true
             if (strategy==3)&&(((x-y)>chance*2)||((y-x)>chance*2))
                 toPick = true
+            if (strategy==4)
+                x=x+lin_size/2
+                y=y+lin_size/2
+                var pxl:uint = food_image|>get_pixel((y*food_image.width)/lin_size,(x*food_image.height)/lin_size)
+                toPick = ((pxl & 0x00F0F0F0) != 0x00000000)&&((pxl & 0x00F0F0F0) != 0x00F0F0F0)
 
             if (toPick)
                 foodMap[i] = true

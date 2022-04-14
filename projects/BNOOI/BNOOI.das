@@ -374,7 +374,19 @@ def initialize
     button4.pressed = true
     button4.ih = image_buttons
     button4.img_index = 4
-    button4.hover_text = "Place food in  two opposing corners"
+    button4.hover_text = "Place food in two opposing corners"
+    
+    var button5 = new radioButtonElement()
+    button5.x = 452
+    button5.y = 400
+    button5.x_scale = 50
+    button5.y_scale = 50
+    button5.color = 0xFF000000
+    button5.color_active = 0xFF008800
+    button5.text = "IMG"
+    button5.id = 8
+    button5.pressed = false
+    button5.hover_text = "Place food according to image file"
 
     push(button1.otherButtons,button2)
     push(button1.otherButtons,button3)
@@ -388,6 +400,15 @@ def initialize
     push(button1.otherButtons,button4)
     push(button2.otherButtons,button4)
     push(button3.otherButtons,button4)
+
+    push(button5.otherButtons,button2)
+    push(button5.otherButtons,button3)
+    push(button5.otherButtons,button4)
+    push(button5.otherButtons,button1)
+    push(button1.otherButtons,button5)
+    push(button2.otherButtons,button5)
+    push(button4.otherButtons,button5)
+    push(button3.otherButtons,button5)
 
     push(all_buttons,button1)
     push(all_buttons,button2)
@@ -643,6 +664,8 @@ def initialize
     button.hover_text = "Keep food"
     push(all_buttons,button)
 
+    push(all_buttons,button5)
+
     var z = 0
     while (z<5)
         var sbutton = new shopButtonElement()
@@ -766,6 +789,8 @@ def act(dt: float)
                 strat = 2
             if (all_buttons[8].pressed)
                 strat = 3
+            if (all_buttons[26].pressed)
+                strat = 4
 
             if (all_buttons[0].pressed)
                 active_enclosure->addFood(loopAm,strat) 
